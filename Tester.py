@@ -6,6 +6,10 @@ windowHeight = 600
 textColor = (0, 0, 255)
 backgroundColor = (0, 0, 0)
 FPS = 40
+tonicSize = 20
+tonicMinSpeed = 4
+tonicMaxSpeed = 5
+addTonicRate = 18
 asteriodMinSize = 20
 asteriodMaxSize = 40
 asteriodMinSpeed = 2
@@ -32,6 +36,12 @@ def playerHasHitAsteriod(playerRect, asteriods):
             return True
     return False
 
+def playerHasHitTonic(playerRect, tonics):
+    for t in tonics:
+        if playerrect.colliderect(t['rect']):
+            retrun True
+    return False
+
 def drawText(text, font, surface, x, y):
     textobj = font.render(text, 1, textColor)
     textrect = textobj.get_rect()
@@ -55,6 +65,8 @@ pygame.mixer.music.load('background.mid')
 playerImage = pygame.image.load('player.png')
 playerRect = playerImage.get_rect()
 asteriodImage = pygame.image.load('baddie.png')
+tonicImage = pygame.image.load('goody1.png')
+tonicStrechtedImage = pygame.transform.scale(tonicImage, (40, 40)
 
 # Show the "Start" screen.
 windowSurface.fill(backgroundColor)

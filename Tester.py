@@ -62,8 +62,9 @@ gameOverSound = pygame.mixer.Sound('gameover.wav')
 pygame.mixer.music.load('background.mid')
 
 # Set up images.
-playerImage = pygame.image.load('player.png')
-playerRect = playerImage.get_rect()
+playerImage = pygame.image.load('spaceship.png')
+playerStrechedImage = pygame.transform.scale(playerImage, (40, 40))
+playerRect = playerStrechedImage.get_rect()
 asteriodImage = pygame.image.load('baddie.png')
 tonicImage = pygame.image.load('goody1.png')
 
@@ -204,7 +205,7 @@ while True:
                10, 40)
 
         # Draw the player's rectangle.
-        windowSurface.blit(playerImage, playerRect)
+        windowSurface.blit(playerStrechedImage, playerRect)
 
         # Draw each baddie.
         for a in asteriods:

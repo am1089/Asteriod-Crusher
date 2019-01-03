@@ -229,6 +229,7 @@ while True:
         
         # Check if any of the tonics have hit the player
         if playerHasHitTonic(playerRect, tonics):
+            score += 10
             if score > topScore:
                 topScore = score
             break

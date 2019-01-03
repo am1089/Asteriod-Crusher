@@ -6,6 +6,10 @@ windowHeight = 600
 textColor = (0, 0, 255)
 backgroundColor = (0, 0, 0)
 FPS = 40
+tonicSize = 20
+tonicMinSpeed = 4
+tonicMaxSpeed = 5
+addTonicRate = 18
 asteriodMinSize = 20
 asteriodMaxSize = 40
 asteriodMinSpeed = 2
@@ -32,6 +36,12 @@ def playerHasHitAsteriod(playerRect, asteriods):
             return True
     return False
 
+def playerHasHitTonic(playerRect, tonics):
+    for t in tonics:
+        if playerrect.colliderect(t['rect']):
+            retrun True
+    return False
+
 def drawText(text, font, surface, x, y):
     textobj = font.render(text, 1, textColor)
     textrect = textobj.get_rect()
@@ -52,9 +62,11 @@ gameOverSound = pygame.mixer.Sound('gameover.wav')
 pygame.mixer.music.load('background.mid')
 
 # Set up images.
-playerImage = pygame.image.load('player.png')
-playerRect = playerImage.get_rect()
+playerImage = pygame.image.load('spaceship.png')
+playerStrechedImage = pygame.transform.scale(playerImage, (40, 40))
+playerRect = playerStrechedImage.get_rect()
 asteriodImage = pygame.image.load('baddie.png')
+tonicImage = pygame.image.load('goody1.png')
 
 # Show the "Start" screen.
 windowSurface.fill(backgroundColor)
@@ -69,10 +81,12 @@ topScore = 0
 while True:
     # Set up the start of the game.
     asteriods = []
+    tonics = []
     score = 0
     playerRect.topleft = (windowWidth / 2, windowHeight - 50)
     moveLeft = moveRight = moveUp = moveDown = False
     reverseCheat = slowCheat = False
+    tonicAddCounter = 0
     asteriodAddCounter = 0
     pygame.mixer.music.play(-1, 0.0)
 
@@ -120,7 +134,7 @@ while True:
                 if event.key == K_DOWN or event.key == K_s:
                     moveDown = False
 
-        # Add new asteriods at the top of the screen, if needed.
+        # Add new asteriods at the right of the screen
         if not reverseCheat and not slowCheat:
             asteriodAddCounter += 1
         if asteriodAddCounter == addNewAsteriodRate:
@@ -131,6 +145,18 @@ while True:
                          'surface':pygame.transform.scale(asteriodImage, (asteriodSize, asteriodSize)),}
 
             asteriods.append(newAsteriod)
+        
+        # Add new asteriods at the right of the screen
+        if not reverseCheat and not slowCheat:
+            tonicAddCounter += 1
+        if tonicAddCounter == addNewTonicRate:
+            tonicAddCounter = 0
+            tonicSize = tonicSize
+            newTonic = {'rect': pygame.Rect(windowWidth, random.randint(0, windowHeight - tonicSize), tonicSize, tonicSize),
+                        'speed': random.randint(tonicMinSize, tonicMaxSize),
+                        'surface':pygame.transform.scale(tonicImage, (tonicSize, tonicSize)),}
+            
+            asteriods.append(newTonic)
 
         # Move the player around.
         if moveLeft and playerRect.left > 0:
@@ -142,7 +168,7 @@ while True:
         if moveDown and playerRect.bottom < windowHeight:
             playerRect.move_ip(0, playerMoveRate)
 
-        # Move the asteriods down.
+        # Move the asteriods left
         for a in asteriods:
             if not reverseCheat and not slowCheat:
                 a['rect'].move_ip(-a['speed'], 0)
@@ -150,11 +176,25 @@ while True:
                 a['rect'].move_ip(5, 0)
             elif slowCheat:
                 a['rect'].move_ip(-1, 0)
-
+                
+        # Move the tonics left
+        for t in tonics:
+            if not reverseCheat and not slowCheat:
+                t['rect'].move_ip(-t['speed'], 0)
+            elif reverseCheat:
+                t['rect'].move_ip(5, 0)
+            elif slowCheat:
+                t['rect'].move_ip(-1, 0)
+        
         # Delete asteriods that have fallen past the bottom.
         for a in asteriods[:]:
             if a['rect'].top > windowHeight:
                 asteriods.remove(a)
+        
+        # Delete tonics that have fallen past the bottom
+        for t in tonics[:]:
+            if t['rect'].top > windowHeight:
+                tonics.remove(t)
 
         # Draw the game world on the window.
         windowSurface.fill(backgroundColor)
@@ -165,12 +205,18 @@ while True:
                10, 40)
 
         # Draw the player's rectangle.
-        windowSurface.blit(playerImage, playerRect)
+        windowSurface.blit(playerStrechedImage, playerRect)
 
         # Draw each baddie.
         for a in asteriods:
             windowSurface.blit(a['surface'], a['rect'])
 
+        pygame.display.update()
+        
+        # Draw each tonic
+        for t in tonics:
+            windowSurface.blit(t['surface'], t['rect'])
+           
         pygame.display.update()
 
         # Check if any of the asteriods have hit the player.
@@ -179,6 +225,15 @@ while True:
                 topScore = score # Set new top score.
             break
 
+        mainClock.tick(FPS)
+        
+        # Check if any of the tonics have hit the player
+        if playerHasHitTonic(playerRect, tonics):
+            score += 10
+            if score > topScore:
+                topScore = score
+            break
+        
         mainClock.tick(FPS)
 
     # Stop the game and show the "Game Over" screen.

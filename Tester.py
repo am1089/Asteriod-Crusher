@@ -33,6 +33,7 @@ def waitForPlayerToPressKey():
 def playerHasHitAsteroid(playerRect, asteroids):
     for a in asteroids:
         if playerRect.colliderect(a['rect']):
+            asteroids.remove(a)
             return True
     return False
 

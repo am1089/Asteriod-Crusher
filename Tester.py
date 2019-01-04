@@ -5,16 +5,16 @@ windowWidth = 600
 windowHeight = 600
 textColor = (0, 0, 255)
 backgroundColor = (0, 0, 0)
-FPS = 40
-tonicSize = 20
+FPS = 20
+tonicSize = 40
 tonicMinSpeed = 4
 tonicMaxSpeed = 5
-addTonicRate = 18
-asteriodMinSize = 20
-asteriodMaxSize = 40
-asteriodMinSpeed = 2
-asteriodMaxSpeed = 8
-addNewAsteriodRate = 14
+addTonicRate = 20
+asteroidMinSize = 20
+asteroidMaxSize = 40
+asteroidMinSpeed = 2
+asteroidMaxSpeed = 8
+addNewAsteroidRate = 14
 playerMoveRate = 5
 def terminate():
     pygame.quit()
@@ -30,16 +30,18 @@ def waitForPlayerToPressKey():
                     terminate()
                 return
 
-def playerHasHitAsteriod(playerRect, asteriods):
-    for a in asteriods:
+def playerHasHitAsteroid(playerRect, asteroids):
+    for a in asteroids:
         if playerRect.colliderect(a['rect']):
             return True
     return False
 
 def playerHasHitTonic(playerRect, tonics):
     for t in tonics:
-        if playerrect.colliderect(t['rect']):
-            retrun True
+        if playerRect.colliderect(t['rect']):
+            #print('Collide with Tonic')
+            tonics.remove(t)
+            return True
     return False
 
 def drawText(text, font, surface, x, y):
@@ -52,7 +54,7 @@ def drawText(text, font, surface, x, y):
 pygame.init()
 mainClock = pygame.time.Clock()
 windowSurface = pygame.display.set_mode((windowWidth, windowHeight))
-pygame.display.set_caption('Asteriod')
+pygame.display.set_caption('Asteroid')
 
 # Set up the fonts.
 font = pygame.font.SysFont(None, 48)
@@ -62,32 +64,34 @@ gameOverSound = pygame.mixer.Sound('gameover.wav')
 pygame.mixer.music.load('background.mid')
 
 # Set up images.
-playerImage = pygame.image.load('spaceship.png')
+playerImage = pygame.image.load('spaceship.jpg')
 playerStrechedImage = pygame.transform.scale(playerImage, (40, 40))
 playerRect = playerStrechedImage.get_rect()
-asteriodImage = pygame.image.load('baddie.png')
-tonicImage = pygame.image.load('goody1.png')
+asteroidImage = pygame.image.load('baddie.png')
+tonicImage = pygame.image.load('goody-1.png')
 
 # Show the "Start" screen.
 windowSurface.fill(backgroundColor)
-drawText('Asteriod', font, windowSurface, (windowWidth / 3),
+drawText('Asteroid', font, windowSurface, (windowWidth / 3),
        (windowHeight / 3))
 drawText('Press a key to start.', font, windowSurface,
        (windowWidth / 3) - 30, (windowHeight / 3) + 50)
 pygame.display.update()
+#print('Start Game')
 waitForPlayerToPressKey()
 
 topScore = 0
 while True:
     # Set up the start of the game.
-    asteriods = []
+    asteroids = []
     tonics = []
     score = 0
+    life = 1
     playerRect.topleft = (windowWidth / 2, windowHeight - 50)
     moveLeft = moveRight = moveUp = moveDown = False
     reverseCheat = slowCheat = False
     tonicAddCounter = 0
-    asteriodAddCounter = 0
+    asteroidAddCounter = 0
     pygame.mixer.music.play(-1, 0.0)
 
     while True: # The game loop runs while the game part is playing.
@@ -134,29 +138,29 @@ while True:
                 if event.key == K_DOWN or event.key == K_s:
                     moveDown = False
 
-        # Add new asteriods at the right of the screen
+        # Add new asteroids at the right of the screen
         if not reverseCheat and not slowCheat:
-            asteriodAddCounter += 1
-        if asteriodAddCounter == addNewAsteriodRate:
-            asteriodAddCounter = 0
-            asteriodSize = random.randint(asteriodMinSize, asteriodMaxSize)
-            newAsteriod = {'rect': pygame.Rect(windowWidth, random.randint(0, windowHeight - asteriodSize), asteriodSize, asteriodSize),
-                         'speed': random.randint(asteriodMinSpeed, asteriodMaxSpeed),
-                         'surface':pygame.transform.scale(asteriodImage, (asteriodSize, asteriodSize)),}
+            asteroidAddCounter += 1
+        if asteroidAddCounter == addNewAsteroidRate:
+            asteroidAddCounter = 0
+            asteroidSize = random.randint(asteroidMinSize, asteroidMaxSize)
+            newAsteroid = {'rect': pygame.Rect(windowWidth, random.randint(0, windowHeight - asteroidSize), asteroidSize, asteroidSize),
+                         'speed': random.randint(asteroidMinSpeed, asteroidMaxSpeed),
+                         'surface':pygame.transform.scale(asteroidImage, (asteroidSize, asteroidSize)),}
 
-            asteriods.append(newAsteriod)
+            asteroids.append(newAsteroid)
         
-        # Add new asteriods at the right of the screen
+        # Add new tonics at the right of the screen
         if not reverseCheat and not slowCheat:
             tonicAddCounter += 1
-        if tonicAddCounter == addNewTonicRate:
+        if tonicAddCounter == addTonicRate:
             tonicAddCounter = 0
             tonicSize = tonicSize
             newTonic = {'rect': pygame.Rect(windowWidth, random.randint(0, windowHeight - tonicSize), tonicSize, tonicSize),
-                        'speed': random.randint(tonicMinSize, tonicMaxSize),
+                        'speed': random.randint(tonicMinSpeed, tonicMaxSpeed),
                         'surface':pygame.transform.scale(tonicImage, (tonicSize, tonicSize)),}
             
-            asteriods.append(newTonic)
+            tonics.append(newTonic)
 
         # Move the player around.
         if moveLeft and playerRect.left > 0:
@@ -168,8 +172,8 @@ while True:
         if moveDown and playerRect.bottom < windowHeight:
             playerRect.move_ip(0, playerMoveRate)
 
-        # Move the asteriods left
-        for a in asteriods:
+        # Move the asteroids left
+        for a in asteroids:
             if not reverseCheat and not slowCheat:
                 a['rect'].move_ip(-a['speed'], 0)
             elif reverseCheat:
@@ -186,15 +190,17 @@ while True:
             elif slowCheat:
                 t['rect'].move_ip(-1, 0)
         
-        # Delete asteriods that have fallen past the bottom.
-        for a in asteriods[:]:
+        # Delete asteroids that have fallen past the bottom.
+        for a in asteroids[:]:
             if a['rect'].top > windowHeight:
-                asteriods.remove(a)
+                asteroids.remove(a)
         
         # Delete tonics that have fallen past the bottom
         for t in tonics[:]:
-            if t['rect'].top > windowHeight:
+           # print("Checking...")
+            if t['rect'].left < 0:
                 tonics.remove(t)
+               # print("Removed tonic")
 
         # Draw the game world on the window.
         windowSurface.fill(backgroundColor)
@@ -208,7 +214,7 @@ while True:
         windowSurface.blit(playerStrechedImage, playerRect)
 
         # Draw each baddie.
-        for a in asteriods:
+        for a in asteroids:
             windowSurface.blit(a['surface'], a['rect'])
 
         pygame.display.update()
@@ -219,22 +225,22 @@ while True:
            
         pygame.display.update()
 
-        # Check if any of the asteriods have hit the player.
-        if playerHasHitAsteriod(playerRect, asteriods):
-            if score > topScore:
-                topScore = score # Set new top score.
-            break
+        # Check if any of the tonics have hit the player
+        if playerHasHitTonic(playerRect, tonics):
+            life += 1
+            #tonics.remove(t)
+           # print('Life = ' + str(life))
+
+        # Check if any of the asteroids have hit the player.
+        if playerHasHitAsteroid(playerRect, asteroids):
+            life -= 1
+            if life <= 0:
+                if score > topScore:
+                    topScore = score # Set new top score.
+                break
 
         mainClock.tick(FPS)
         
-        # Check if any of the tonics have hit the player
-        if playerHasHitTonic(playerRect, tonics):
-            score += 10
-            if score > topScore:
-                topScore = score
-            break
-        
-        mainClock.tick(FPS)
 
     # Stop the game and show the "Game Over" screen.
     pygame.mixer.music.stop()
@@ -247,5 +253,4 @@ while True:
     pygame.display.update()
     waitForPlayerToPressKey()
 
-    gameOverSound.stop()
-
+gameOverSound.stop()

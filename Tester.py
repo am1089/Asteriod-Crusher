@@ -40,7 +40,6 @@ def playerHasHitAsteroid(playerRect, asteroids):
 def playerHasHitTonic(playerRect, tonics):
     for t in tonics:
         if playerRect.colliderect(t['rect']):
-            #print('Collide with Tonic')
             tonics.remove(t)
             return True
     return False
@@ -198,10 +197,8 @@ while True:
         
         # Delete tonics that have fallen past the bottom
         for t in tonics[:]:
-           # print("Checking...")
             if t['rect'].left < 0:
                 tonics.remove(t)
-               # print("Removed tonic")
 
         # Draw the game world on the window.
         windowSurface.fill(backgroundColor)
@@ -229,8 +226,6 @@ while True:
         # Check if any of the tonics have hit the player
         if playerHasHitTonic(playerRect, tonics):
             life += 1
-            #tonics.remove(t)
-           # print('Life = ' + str(life))
 
         # Check if any of the asteroids have hit the player.
         if playerHasHitAsteroid(playerRect, asteroids):

@@ -77,7 +77,6 @@ drawText('Asteroid', font, windowSurface, (windowWidth / 3),
 drawText('Press a key to start.', font, windowSurface,
        (windowWidth / 3) - 30, (windowHeight / 3) + 50)
 pygame.display.update()
-#print('Start Game')
 waitForPlayerToPressKey()
 
 topScore = 0

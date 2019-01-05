@@ -77,6 +77,7 @@ gameOverSound = pygame.mixer.Sound('gameover.wav')
 pygame.mixer.music.load('background.mid')
 pickUpTonicSound = pygame.mixer.Sound('smw_1-up.wav')
 gotHitByAsteroid = pygame.mixer.Sound('0477.wav')
+gotHitByMT = pygame.mixer.Sound('cheering.wav')
 
 # Set up images.
 playerImage = pygame.image.load('clipart35059.png')
@@ -295,6 +296,7 @@ while True:
 
         # Check if player has hit a mega tank
         if playerHasHitMegaTank(playerRect, MTanks):
+            gotHitByMegaTank.play()
             score += 1000
             life += 3
             if life <= SMaxLife:

@@ -21,8 +21,8 @@ asteroidMinSpeed = 2
 asteroidMaxSpeed = 8
 addNewAsteroidRate = 8
 playerMoveRate = 5
-MaxLife = 9
-SuperMaxLife = 12
+MaxLife = 5
+SuperMaxLife = 8
 def terminate():
     pygame.quit()
     sys.exit()

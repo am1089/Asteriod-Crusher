@@ -47,7 +47,6 @@ def playerHasHitAsteroid(playerRect, asteroids):
 def playerHasHitMegaTank(playerRect, MTanks):
     for m in MTanks:
         if playerRect.colliderect(m['rect']):
-            windowSurface.fill(backgroundColor2)
             MTanks.remove(m)
             return True
     return False
@@ -551,17 +550,17 @@ while True:
                 m['rect'].move_ip(-1, 0)
             
         
-        # Delete asteroids that have fallen past the bottom.
+        # Delete asteroids that have fallen past the left.
         for a in asteroids[:]:
             if a['rect'].left < 0:
                 asteroids.remove(a)
         
-        # Delete tonics that have fallen past the bottom
+        # Delete tonics that have fallen past the left
         for t in tonics[:]:
             if t['rect'].left < 0:
                 tonics.remove(t)
 
-        # Delete tanks that have fallen past the bottom
+        # Delete tanks that have fallen past the left
         for m in MTanks[:]:
             if m['rect'].left < 0:
                 MTanks.remove(m)
@@ -578,7 +577,7 @@ while True:
         # Draw the player's rectangle.
         windowSurface.blit(playerStrechedImage, playerRect)
 
-        # Draw each baddie.
+        # Draw each asteroid.
         for a in asteroids:
             windowSurface.blit(a['surface'], a['rect'])
 
@@ -620,8 +619,8 @@ while True:
             gotHitByMegaTank.play()
             score += 1000
             life += 3
-            if life <= SMaxLife:
-                life = life 
+            if life > SuperMaxLife:
+                life = SuperMaxLife 
             
         mainClock.tick(FPS)
         

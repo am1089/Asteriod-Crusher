@@ -301,7 +301,7 @@ while True:
             score += 1000
             life += 3
             if life > SuperMaxLife:
-                life = SMaxlife 
+                life = SuperMaxlife 
             
         mainClock.tick(FPS)
         

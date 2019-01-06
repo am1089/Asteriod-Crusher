@@ -5,17 +5,23 @@ windowWidth = 600
 windowHeight = 600
 textColor = (0, 0, 255)
 backgroundColor = (0, 0, 0)
-FPS = 40
-tonicSize = 20
+FPS = 20
+tankSize = 25
+tankMinSpeed = 8
+tankMaxSpeed = 10
+add_mg_Rate = 700
+tonicSize = 40
 tonicMinSpeed = 4
 tonicMaxSpeed = 5
-addTonicRate = 18
-asteriodMinSize = 20
-asteriodMaxSize = 40
-asteriodMinSpeed = 2
-asteriodMaxSpeed = 8
-addNewAsteriodRate = 14
+addTonicRate = 45
+asteroidMinSize = 20
+asteroidMaxSize = 40
+asteroidMinSpeed = 2
+asteroidMaxSpeed = 8
+addNewAsteroidRate = 6
 playerMoveRate = 5
+MaxLife = 9
+SMaxLife = 12
 def terminate():
     pygame.quit()
     sys.exit()
@@ -30,16 +36,25 @@ def waitForPlayerToPressKey():
                     terminate()
                 return
 
-def playerHasHitAsteriod(playerRect, asteriods):
-    for a in asteriods:
+def playerHasHitAsteroid(playerRect, asteroids):
+    for a in asteroids:
         if playerRect.colliderect(a['rect']):
+            asteroids.remove(a)
+            return True
+    return False
+
+def playerHasHitMegaTank(playerRect, MTanks):
+    for m in MTanks:
+        if playerRect.colliderect(m['rect']):
+            MTanks.remove(m)
             return True
     return False
 
 def playerHasHitTonic(playerRect, tonics):
     for t in tonics:
-        if playerrect.colliderect(t['rect']):
-            retrun True
+        if playerRect.colliderect(t['rect']):
+            tonics.remove(t)
+            return True
     return False
 
 def drawText(text, font, surface, x, y):
@@ -52,7 +67,7 @@ def drawText(text, font, surface, x, y):
 pygame.init()
 mainClock = pygame.time.Clock()
 windowSurface = pygame.display.set_mode((windowWidth, windowHeight))
-pygame.display.set_caption('Asteriod')
+pygame.display.set_caption('Asteroid')
 
 # Set up the fonts.
 font = pygame.font.SysFont(None, 48)
@@ -60,17 +75,21 @@ font = pygame.font.SysFont(None, 48)
 # Set up sounds.
 gameOverSound = pygame.mixer.Sound('gameover.wav')
 pygame.mixer.music.load('background.mid')
+pickUpTonicSound = pygame.mixer.Sound('smw_1-up.wav')
+gotHitByAsteroid = pygame.mixer.Sound('0477.wav')
+gotHitByMT = pygame.mixer.Sound('cheering.wav')
 
 # Set up images.
-playerImage = pygame.image.load('spaceship.png')
-playerStrechedImage = pygame.transform.scale(playerImage, (40, 40))
+playerImage = pygame.image.load('clipart35059.png')
+playerStrechedImage = pygame.transform.scale(playerImage, (35, 35))
 playerRect = playerStrechedImage.get_rect()
-asteriodImage = pygame.image.load('baddie.png')
-tonicImage = pygame.image.load('goody1.png')
+asteroidImage = pygame.image.load('asteroid.png')
+tonicImage = pygame.image.load('Energy_Tank.png')
+megaTankImage = pygame.image.load('mega_tank.png')
 
 # Show the "Start" screen.
 windowSurface.fill(backgroundColor)
-drawText('Asteriod', font, windowSurface, (windowWidth / 3),
+drawText('Asteroid', font, windowSurface, (windowWidth / 3),
        (windowHeight / 3))
 drawText('Press a key to start.', font, windowSurface,
        (windowWidth / 3) - 30, (windowHeight / 3) + 50)
@@ -80,14 +99,17 @@ waitForPlayerToPressKey()
 topScore = 0
 while True:
     # Set up the start of the game.
-    asteriods = []
+    asteroids = []
     tonics = []
+    MTanks = []
     score = 0
+    life = 1
     playerRect.topleft = (windowWidth / 2, windowHeight - 50)
     moveLeft = moveRight = moveUp = moveDown = False
     reverseCheat = slowCheat = False
     tonicAddCounter = 0
-    asteriodAddCounter = 0
+    asteroidAddCounter = 0
+    tankAddCounter = 0
     pygame.mixer.music.play(-1, 0.0)
 
     while True: # The game loop runs while the game part is playing.
@@ -134,30 +156,42 @@ while True:
                 if event.key == K_DOWN or event.key == K_s:
                     moveDown = False
 
-        # Add new asteriods at the right of the screen
+        # Add new asteroids at the right of the screen
         if not reverseCheat and not slowCheat:
-            asteriodAddCounter += 1
-        if asteriodAddCounter == addNewAsteriodRate:
-            asteriodAddCounter = 0
-            asteriodSize = random.randint(asteriodMinSize, asteriodMaxSize)
-            newAsteriod = {'rect': pygame.Rect(windowWidth, random.randint(0, windowHeight - asteriodSize), asteriodSize, asteriodSize),
-                         'speed': random.randint(asteriodMinSpeed, asteriodMaxSpeed),
-                         'surface':pygame.transform.scale(asteriodImage, (asteriodSize, asteriodSize)),}
+            asteroidAddCounter += 1
+        if asteroidAddCounter == addNewAsteroidRate:
+            asteroidAddCounter = 0
+            asteroidSize = random.randint(asteroidMinSize, asteroidMaxSize)
+            newAsteroid = {'rect': pygame.Rect(windowWidth, random.randint(0, windowHeight - asteroidSize), asteroidSize, asteroidSize),
+                         'speed': random.randint(asteroidMinSpeed, asteroidMaxSpeed),
+                         'surface':pygame.transform.scale(asteroidImage, (asteroidSize, asteroidSize)),}
 
-            asteriods.append(newAsteriod)
+            asteroids.append(newAsteroid)
         
-        # Add new asteriods at the right of the screen
+        # Add new tonics at the right of the screen
         if not reverseCheat and not slowCheat:
             tonicAddCounter += 1
-        if tonicAddCounter == addNewTonicRate:
+        if tonicAddCounter == addTonicRate:
             tonicAddCounter = 0
             tonicSize = tonicSize
             newTonic = {'rect': pygame.Rect(windowWidth, random.randint(0, windowHeight - tonicSize), tonicSize, tonicSize),
-                        'speed': random.randint(tonicMinSize, tonicMaxSize),
+                        'speed': random.randint(tonicMinSpeed, tonicMaxSpeed),
                         'surface':pygame.transform.scale(tonicImage, (tonicSize, tonicSize)),}
             
-            asteriods.append(newTonic)
+            tonics.append(newTonic)
 
+        # Add new mega tanks at the right of the screen
+        if not reverseCheat and not slowCheat:
+            tankAddCounter += 1
+        if tankAddCounter == add_mg_Rate:
+            tankAddCounter = 0
+            tankSize = tankSize
+            newTank = {'rect': pygame.Rect(windowWidth, random.randint(0, windowHeight - tankSize), tankSize, tankSize),
+                       'speed': random.randint(tankMinSpeed, tankMaxSpeed),
+                       'surface': pygame.transform.scale(megaTankImage, (tankSize, tankSize)),}
+
+            MTanks.append(newTank)
+            
         # Move the player around.
         if moveLeft and playerRect.left > 0:
             playerRect.move_ip(-1 * playerMoveRate, 0)
@@ -168,8 +202,8 @@ while True:
         if moveDown and playerRect.bottom < windowHeight:
             playerRect.move_ip(0, playerMoveRate)
 
-        # Move the asteriods left
-        for a in asteriods:
+        # Move the asteroids left
+        for a in asteroids:
             if not reverseCheat and not slowCheat:
                 a['rect'].move_ip(-a['speed'], 0)
             elif reverseCheat:
@@ -185,16 +219,31 @@ while True:
                 t['rect'].move_ip(5, 0)
             elif slowCheat:
                 t['rect'].move_ip(-1, 0)
+
+        # Move the tanks left
+        for m in MTanks:
+            if not reverseCheat and not slowCheat:
+                m['rect'].move_ip(-m['speed'], 0)
+            elif reverseCheat:
+                m['rect'].move_ip(5, 0)
+            elif slowCheat:
+                m['rect'].move_ip(-1, 0)
+            
         
-        # Delete asteriods that have fallen past the bottom.
-        for a in asteriods[:]:
-            if a['rect'].top > windowHeight:
-                asteriods.remove(a)
+        # Delete asteroids that have fallen past the bottom.
+        for a in asteroids[:]:
+            if a['rect'].left < 0:
+                asteroids.remove(a)
         
         # Delete tonics that have fallen past the bottom
         for t in tonics[:]:
-            if t['rect'].top > windowHeight:
+            if t['rect'].left < 0:
                 tonics.remove(t)
+
+        # Delete tanks that have fallen past the bottom
+        for m in MTanks[:]:
+            if m['rect'].left < 0:
+                MTanks.remove(m)
 
         # Draw the game world on the window.
         windowSurface.fill(backgroundColor)
@@ -203,12 +252,13 @@ while True:
         drawText('Score: %s' % (score), font, windowSurface, 10, 0)
         drawText('Top Score: %s' % (topScore), font, windowSurface,
                10, 40)
+        drawText('Life: %s' % (life), font, windowSurface, 10, 80)
 
         # Draw the player's rectangle.
         windowSurface.blit(playerStrechedImage, playerRect)
 
         # Draw each baddie.
-        for a in asteriods:
+        for a in asteroids:
             windowSurface.blit(a['surface'], a['rect'])
 
         pygame.display.update()
@@ -219,22 +269,41 @@ while True:
            
         pygame.display.update()
 
-        # Check if any of the asteriods have hit the player.
-        if playerHasHitAsteriod(playerRect, asteriods):
-            if score > topScore:
-                topScore = score # Set new top score.
-            break
+        # Draw each mega tank
+        for m in MTanks:
+            windowSurface.blit(m['surface'], m['rect'])
 
-        mainClock.tick(FPS)
-        
+        pygame.display.update()
+
         # Check if any of the tonics have hit the player
         if playerHasHitTonic(playerRect, tonics):
-            score += 10
-            if score > topScore:
-                topScore = score
-            break
-        
+            pickUpTonicSound.play()
+            score += 50
+            if life < MaxLife:
+                life += 1
+                
+                
+
+        # Check if any of the asteroids have hit the player.
+        if playerHasHitAsteroid(playerRect, asteroids):
+            score -= 10
+            life -= 1
+            gotHitByAsteroid.play()
+            if life <= 0:
+                if score > topScore:
+                    topScore = score # Set new top score.
+                break
+
+        # Check if player has hit a mega tank
+        if playerHasHitMegaTank(playerRect, MTanks):
+            gotHitByMegaTank.play()
+            score += 1000
+            life += 3
+            if life <= SMaxLife:
+                life = life 
+            
         mainClock.tick(FPS)
+        
 
     # Stop the game and show the "Game Over" screen.
     pygame.mixer.music.stop()
@@ -247,5 +316,4 @@ while True:
     pygame.display.update()
     waitForPlayerToPressKey()
 
-    gameOverSound.stop()
-
+gameOverSound.stop()

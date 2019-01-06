@@ -616,7 +616,7 @@ while True:
 
         # Check if player has hit a mega tank
         if playerHasHitMegaTank(playerRect, MTanks):
-            gotHitByMegaTank.play()
+            gotHitByMT.play()
             score += 1000
             life += 3
             if life > SuperMaxLife:

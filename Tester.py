@@ -10,7 +10,7 @@ FPS = 40
 tankSize = 25
 tankMinSpeed = 8
 tankMaxSpeed = 10
-add_mg_Rate = 500
+addTankRate = 500
 tonicSize = 30
 tonicMinSpeed = 4
 tonicMaxSpeed = 5
@@ -19,7 +19,7 @@ asteroidMinSize = 20
 asteroidMaxSize = 40
 asteroidMinSpeed = 2
 asteroidMaxSpeed = 8
-addNewAsteroidRate = 8
+addNewAsteroidRate = 10
 BigShroomSize = 25
 BigShroomMinSpeed = 3
 BigShroomMaxSpeed = 5
@@ -28,9 +28,9 @@ SmallShroomSize = 25
 SmallShroomMinSpeed = 4
 SmallShroomMaxSpeed = 6
 addSmallShroomRate = 55
-playerMoveRate = 6
-MaxLife = 5
-SuperMaxLife = 8
+playerMoveRate = 5
+MaxLife = 9
+SuperMaxLife = 12
 def terminate():
     pygame.quit()
     sys.exit()
@@ -73,6 +73,13 @@ def playerHasHitTonic(playerRect, tonics):
             return True
     return False
 
+def playerHasHitSmallShroom(playerRect, SmallShrooms):
+    for s in SmallShrooms:
+        if playerRect.colliderect(s['rect']):
+            SmallShrooms.remove(s)
+            return True
+    return False
+
 def drawText(text, font, surface, x, y):
     textobj = font.render(text, 1, textColor)
     textrect = textobj.get_rect()
@@ -80,7 +87,7 @@ def drawText(text, font, surface, x, y):
     surface.blit(textobj, textrect)
 
 
-# Set up pygame, the window, and the mouse cursor.
+# Set up pygame and the window
 pygame.init()
 mainClock = pygame.time.Clock()
 windowSurface = pygame.display.set_mode((windowWidth, windowHeight))
@@ -96,6 +103,7 @@ pickUpTonicSound = pygame.mixer.Sound('smw_1-up.wav')
 gotHitByAsteroid = pygame.mixer.Sound('0477.wav')
 gotHitByMT = pygame.mixer.Sound('cheering.wav')
 gotHitByBigShroom = pygame.mixer.Sound('blip.wav')
+gotHitBySmallShroom = pygame.mixer.Sound('blurp.wav')
 
 # Set up images
 player = pygame.Rect(300, 100, 35, 35)
@@ -106,6 +114,7 @@ asteroidImage = pygame.image.load('asteroid.png')
 tonicImage = pygame.image.load('Energy_Tank.png')
 megaTankImage = pygame.image.load('mega_tank.png')
 BigShroomImage = pygame.image.load('BigShroom.png')
+SmallShroomImage = pygame.image.load('SmallShroom.png')
 
 # Show the "Start" screen.
 windowSurface.fill(backgroundColor)
@@ -123,6 +132,7 @@ while True:
     tonics = []
     MTanks = []
     BigShrooms = []
+    SmallShrooms = []
     score = 0
     life = 1
     playerRect.topleft = (windowWidth / 2, windowHeight - 50)
@@ -132,6 +142,7 @@ while True:
     asteroidAddCounter = 0
     tankAddCounter = 0
     bigShroomAddCounter = 0
+    smallShroomAddCounter = 0
     pygame.mixer.music.play(-1, 0.0)
 
     while True: # The game loop runs while the game part is playing.
@@ -205,7 +216,7 @@ while True:
         # Add new mega tanks at the right of the screen
         if not reverseCheat and not slowCheat:
             tankAddCounter += 1
-        if tankAddCounter == add_mg_Rate:
+        if tankAddCounter == addTankRate:
             tankAddCounter = 0
             tankSize = tankSize
             newTank = {'rect': pygame.Rect(windowWidth, random.randint(0, windowHeight - tankSize), tankSize, tankSize),
@@ -225,6 +236,18 @@ while True:
                             'surface': pygame.transform.scale(BigShroomImage, (BigShroomSize, BigShroomSize)),}
 
             BigShrooms.append(newBigShroom)
+
+        # Add new SmallShrooms at the right of the screen
+        if not reverseCheat and not slowCheat:
+            smallShroomAddCounter += 1
+        if smallShroomAddCounter == addSmallShroomRate:
+            smallShroomAddCounter = 0
+            SmallShroomSize = SmallShroomSize
+            newSmallShroom = {'rect': pygame.Rect(windowWidth, random.randint(0, windowHeight - SmallShroomSize), SmallShroomSize, SmallShroomSize),
+                              'speed': random.randint(SmallShroomMinSpeed, SmallShroomMaxSpeed),
+                              'surface': pygame.transform.scale(SmallShroomImage, (SmallShroomSize, SmallShroomSize)),}
+            
+            SmallShrooms.append(newSmallShroom)
             
         # Move the player around.
         if moveLeft and playerRect.left > 0:
@@ -271,6 +294,15 @@ while True:
                 b['rect'].move_ip(5, 0)
             elif slowCheat:
                 b['rect'].move_ip(-1, 0)
+
+        # Move Smallshrooms left
+        for s in SmallShrooms:
+            if not reverseCheat and not slowCheat:
+                s['rect'].move_ip(-s['speed'], 0)
+            elif reverseCheat:
+                s['rect'].move_ip(5, 0)
+            elif slowCheat:
+                s['rect'].move_ip(-1, 0)
         
         # Delete asteroids that have fallen past the left of the screen.
         for a in asteroids[:]:
@@ -287,10 +319,15 @@ while True:
             if m['rect'].left < 0:
                 MTanks.remove(m)
 
-        # Delete BigShrooms that have fallen past the lef tof the screen
+        # Delete BigShrooms that have fallen past the left of the screen
         for b in BigShrooms[:]:
             if b['rect'].left < 0:
                 BigShrooms.remove(b)
+
+        # Delete Smallshrooms that have fallen past the left of the screen
+        for s in SmallShrooms[:]:
+            if s['rect'].left < 0:
+                SmallShrooms.remove(s)
         
         # Draw the game world on the window.
         windowSurface.fill(backgroundColor)
@@ -328,6 +365,12 @@ while True:
 
         pygame.display.update()
 
+        # Draw each SmallShroom
+        for s in SmallShrooms:
+            windowSurface.blit(s['surface'], s['rect'])
+
+        pygame.display.update()
+
         # Check if any of the tonics have hit the player
         if playerHasHitTonic(playerRect, tonics):
             pickUpTonicSound.play()
@@ -335,8 +378,6 @@ while True:
             if life < MaxLife:
                 life += 1
                 
-                
-
         # Check if any of the asteroids have hit the player.
         if playerHasHitAsteroid(playerRect, asteroids):
             score -= 10
@@ -350,6 +391,10 @@ while True:
         # Check if player has hit a mega tank
         if playerHasHitMegaTank(playerRect, MTanks):
             gotHitByMT.play()
+            playerMoveRate = 5
+            player.height = 35
+            player.width = 35
+            playerStrechedImage = pygame.transform.scale(playerImage, (player.height, player.width))
             score += 1000
             life += 3
             if life > SuperMaxLife:
@@ -358,8 +403,16 @@ while True:
         # Check if player has hit Bigshroom
         if playerHasHitBigShroom(playerRect, BigShrooms):
             gotHitByBigShroom.play()
-            score += 10
+            score += 20
+            playerMoveRate -= 1
             player = pygame.Rect(player.left, player.top, player.width + 2, player.height + 2)
+            playerStrechedImage = pygame.transform.scale(playerImage, (player.height, player.width))
+
+        if playerHasHitSmallShroom(playerRect, SmallShrooms):
+            gotHitBySmallShroom.play()
+            score += 20
+            playerMoveRate += 1
+            player = pygame.Rect(player.left, player.top, player.width - 2, player.height - 2)
             playerStrechedImage = pygame.transform.scale(playerImage, (player.height, player.width))
             
         mainClock.tick(FPS)

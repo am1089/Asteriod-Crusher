@@ -206,7 +206,6 @@ while True:
             tonicAddCounter += 1
         if tonicAddCounter == addTonicRate:
             tonicAddCounter = 0
-            tonicSize = tonicSize
             newTonic = {'rect': pygame.Rect(windowWidth, random.randint(0, windowHeight - tonicSize), tonicSize, tonicSize),
                         'speed': random.randint(tonicMinSpeed, tonicMaxSpeed),
                         'surface':pygame.transform.scale(tonicImage, (tonicSize, tonicSize)),}
@@ -218,7 +217,6 @@ while True:
             tankAddCounter += 1
         if tankAddCounter == addTankRate:
             tankAddCounter = 0
-            tankSize = tankSize
             newTank = {'rect': pygame.Rect(windowWidth, random.randint(0, windowHeight - tankSize), tankSize, tankSize),
                        'speed': random.randint(tankMinSpeed, tankMaxSpeed),
                        'surface': pygame.transform.scale(megaTankImage, (tankSize, tankSize)),}
@@ -230,7 +228,6 @@ while True:
             bigShroomAddCounter += 1
         if bigShroomAddCounter == addBigShroomRate:
             bigShroomAddCounter = 0
-            BigShroomSize = BigShroomSize
             newBigShroom = {'rect': pygame.Rect(windowWidth, random.randint(0, windowHeight - BigShroomSize), BigShroomSize, BigShroomSize),
                             'speed': random.randint(BigShroomMinSpeed, BigShroomMaxSpeed),
                             'surface': pygame.transform.scale(BigShroomImage, (BigShroomSize, BigShroomSize)),}
@@ -242,7 +239,6 @@ while True:
             smallShroomAddCounter += 1
         if smallShroomAddCounter == addSmallShroomRate:
             smallShroomAddCounter = 0
-            SmallShroomSize = SmallShroomSize
             newSmallShroom = {'rect': pygame.Rect(windowWidth, random.randint(0, windowHeight - SmallShroomSize), SmallShroomSize, SmallShroomSize),
                               'speed': random.randint(SmallShroomMinSpeed, SmallShroomMaxSpeed),
                               'surface': pygame.transform.scale(SmallShroomImage, (SmallShroomSize, SmallShroomSize)),}

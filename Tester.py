@@ -5,32 +5,47 @@ windowWidth = 600
 windowHeight = 600
 textColor = (0, 0, 255)
 backgroundColor = (0, 0, 0)
-backgroundColor2 = (0, 200, 60)
 FPS = 40
-tankSize = 25
-tankMinSpeed = 8
-tankMaxSpeed = 10
-addTankRate = 500
-tonicSize = 30
-tonicMinSpeed = 4
-tonicMaxSpeed = 5
-addTonicRate = 25
-asteroidMinSize = 20
-asteroidMaxSize = 40
-asteroidMinSpeed = 2
-asteroidMaxSpeed = 8
-addNewAsteroidRate = 10
-BigShroomSize = 25
-BigShroomMinSpeed = 3
-BigShroomMaxSpeed = 5
-addBigShroomRate = 60
-SmallShroomSize = 25
-SmallShroomMinSpeed = 4
-SmallShroomMaxSpeed = 6
-addSmallShroomRate = 55
 playerMoveRate = 5
 MaxLife = 9
 SuperMaxLife = 12
+
+class Tank(object):
+    def __init__(self, tankSize, tankMinSpeed, tankMaxSpeed, addTankRate):
+        self.tankSize = tankSize
+        self.tankMinSpeed = tankMinSpeed
+        self.tankMaxSpeed = tankMaxSpeed
+        self.addTankRate = addTankRate
+
+class Tonic(object):
+    def __init__(self, tonicSize, tonicMinSpeed, tonicMaxSpeed, addTonicRate):
+        self.tonicSize = tonicSize
+        self.tonicMinSpeed = tonicMinSpeed
+        self.tonicMaxSpeed = tonicMaxSpeed
+        self.addTonicRate = addTonicRate
+
+class Asteroid(object):
+    def __init__(self, asteroidMinSize, asteroidMaxSize, asteroidMinSpeed, asteroidMaxSpeed, addNewAsteroidRate):
+        self.asteroidMinSize = asteroidMinSize
+        self.asteroidMaxSize = asteroidMaxSize
+        self.asteroidMinSpeed = asteroidMinSpeed
+        self.asteroidMaxSpeed = asteroidMaxSpeed
+        self.addNewAsteroidRate = addNewAsteroidRate
+
+class BigShroom(object):
+    def __init__(self, BigShroomSize, BigShroomMinSpeed, BigShroomMaxSpeed, addBigShroomRate):
+        self.BigShroomSize = BigShroomSize
+        self.BigShroomMinSpeed = BigShroomMinSpeed
+        self.BigShroomMaxSpeed = BigShroomMaxSpeed
+        self.addBigShroomRate = addBigShroomRate
+
+class SmallShroom(object):
+    def __init__(self, SmallShroomSize, SmallShroomMinSpeed, SmallShroomMaxSpeed, addSmallShroomRate):
+        self.SmallShroomSize = SmallShroomSize
+        self.SmallShroomMinSpeed = SmallShroomMinSpeed
+        self.SmallShroomMaxSpeed = SmallShroomMaxSpeed
+        self.addSmallShroomRate = addSmallShroomRate
+
 def terminate():
     pygame.quit()
     sys.exit()
@@ -126,6 +141,11 @@ pygame.display.update()
 waitForPlayerToPressKey()
 
 topScore = 0
+tank = Tank(25, 8, 10, 500)
+tonic = Tonic(30, 4, 5, 25)
+asteroid = Asteroid(20, 40 , 2, 8, 10)
+BigShroom = BigShroom(25, 3, 5, 60)
+SmallShroom = SmallShroom(25, 4, 5, 60)
 while True:
     # Set up the start of the game.
     asteroids = []
@@ -192,11 +212,11 @@ while True:
         # Add new asteroids at the right of the screen
         if not reverseCheat and not slowCheat:
             asteroidAddCounter += 1
-        if asteroidAddCounter == addNewAsteroidRate:
+        if asteroidAddCounter == asteroid.addNewAsteroidRate:
             asteroidAddCounter = 0
-            asteroidSize = random.randint(asteroidMinSize, asteroidMaxSize)
+            asteroidSize = random.randint(asteroid.asteroidMinSize, asteroid.asteroidMaxSize)
             newAsteroid = {'rect': pygame.Rect(windowWidth, random.randint(0, windowHeight - asteroidSize), asteroidSize, asteroidSize),
-                         'speed': random.randint(asteroidMinSpeed, asteroidMaxSpeed),
+                         'speed': random.randint(asteroid.asteroidMinSpeed, asteroid.asteroidMaxSpeed),
                          'surface':pygame.transform.scale(asteroidImage, (asteroidSize, asteroidSize)),}
 
             asteroids.append(newAsteroid)
@@ -204,44 +224,44 @@ while True:
         # Add new tonics at the right of the screen
         if not reverseCheat and not slowCheat:
             tonicAddCounter += 1
-        if tonicAddCounter == addTonicRate:
+        if tonicAddCounter == tonic.addTonicRate:
             tonicAddCounter = 0
-            newTonic = {'rect': pygame.Rect(windowWidth, random.randint(0, windowHeight - tonicSize), tonicSize, tonicSize),
-                        'speed': random.randint(tonicMinSpeed, tonicMaxSpeed),
-                        'surface':pygame.transform.scale(tonicImage, (tonicSize, tonicSize)),}
+            newTonic = {'rect': pygame.Rect(windowWidth, random.randint(0, windowHeight - tonic.tonicSize), tonic.tonicSize, tonic.tonicSize),
+                        'speed': random.randint(tonic.tonicMinSpeed, tonic.tonicMaxSpeed),
+                        'surface':pygame.transform.scale(tonicImage, (tonic.tonicSize, tonic.tonicSize)),}
             
             tonics.append(newTonic)
 
         # Add new mega tanks at the right of the screen
         if not reverseCheat and not slowCheat:
             tankAddCounter += 1
-        if tankAddCounter == addTankRate:
+        if tankAddCounter == tank.addTankRate:
             tankAddCounter = 0
-            newTank = {'rect': pygame.Rect(windowWidth, random.randint(0, windowHeight - tankSize), tankSize, tankSize),
-                       'speed': random.randint(tankMinSpeed, tankMaxSpeed),
-                       'surface': pygame.transform.scale(megaTankImage, (tankSize, tankSize)),}
+            newTank = {'rect': pygame.Rect(windowWidth, random.randint(0, windowHeight - tank.tankSize), tank.tankSize, tank.tankSize),
+                       'speed': random.randint(tank.tankMinSpeed, tank.tankMaxSpeed),
+                       'surface': pygame.transform.scale(megaTankImage, (tank.tankSize, tank.tankSize)),}
 
             MTanks.append(newTank)
 
         # Add new Bigshrooms at the right of the screen
         if not reverseCheat and not slowCheat:
             bigShroomAddCounter += 1
-        if bigShroomAddCounter == addBigShroomRate:
+        if bigShroomAddCounter == BigShroom.addBigShroomRate:
             bigShroomAddCounter = 0
-            newBigShroom = {'rect': pygame.Rect(windowWidth, random.randint(0, windowHeight - BigShroomSize), BigShroomSize, BigShroomSize),
-                            'speed': random.randint(BigShroomMinSpeed, BigShroomMaxSpeed),
-                            'surface': pygame.transform.scale(BigShroomImage, (BigShroomSize, BigShroomSize)),}
+            newBigShroom = {'rect': pygame.Rect(windowWidth, random.randint(0, windowHeight - BigShroom.BigShroomSize), BigShroom.BigShroomSize, BigShroom.BigShroomSize),
+                            'speed': random.randint(BigShroom.BigShroomMinSpeed, BigShroom.BigShroomMaxSpeed),
+                            'surface': pygame.transform.scale(BigShroomImage, (BigShroom.BigShroomSize, BigShroom.BigShroomSize)),}
 
             BigShrooms.append(newBigShroom)
 
         # Add new SmallShrooms at the right of the screen
         if not reverseCheat and not slowCheat:
             smallShroomAddCounter += 1
-        if smallShroomAddCounter == addSmallShroomRate:
+        if smallShroomAddCounter == SmallShroom.addSmallShroomRate:
             smallShroomAddCounter = 0
-            newSmallShroom = {'rect': pygame.Rect(windowWidth, random.randint(0, windowHeight - SmallShroomSize), SmallShroomSize, SmallShroomSize),
-                              'speed': random.randint(SmallShroomMinSpeed, SmallShroomMaxSpeed),
-                              'surface': pygame.transform.scale(SmallShroomImage, (SmallShroomSize, SmallShroomSize)),}
+            newSmallShroom = {'rect': pygame.Rect(windowWidth, random.randint(0, windowHeight - SmallShroom.SmallShroomSize), SmallShroom.SmallShroomSize, SmallShroom.SmallShroomSize),
+                              'speed': random.randint(SmallShroom.SmallShroomMinSpeed, SmallShroom.SmallShroomMaxSpeed),
+                              'surface': pygame.transform.scale(SmallShroomImage, (SmallShroom.SmallShroomSize, SmallShroom.SmallShroomSize)),}
             
             SmallShrooms.append(newSmallShroom)
             

@@ -35,7 +35,7 @@ class variableSize(object):
 
 
     def drawList(self):
-        for o in self.list:
+        for o in self.list[:]:
             windowSurface.blit(o['surface'], o['rect'])
 
     def moveList(self):

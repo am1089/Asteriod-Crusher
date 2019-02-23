@@ -1,52 +1,56 @@
-import pygame, random, sys
+import pygame, random, sys, math
 from pygame.locals import *
 
 windowWidth = 700
 windowHeight = 600
 textColor = (0, 0, 255)
 backgroundColor = (0, 0, 0)
-FPS = 40
+FPS = 30
 playerMoveRate = 5
 MaxLife = 6
 SuperMaxLife = 9
+noScreenUpdate = 0
 
 class variableSize(object):
-    def __init__(self, minSize, maxSize, MinSpeed, MaxSpeed, addRate, image):
-        self.minSize = minSize
-        self.maxSize = maxSize
-        self.MinSpeed = MinSpeed
-        self.MaxSpeed = MaxSpeed
-        self.addRate = addRate
+    def __init__(self, size, center_x, center_y, radius, revsPerSec, image):
+        self.size = size
+        self.center = (int(center_x), int(center_y))
+        self.radius = radius
+        self.revsPerSec = revsPerSec
         self.image = image
-        self.counter = 0
+        self.theta = 90
+        self.color = (255,0,0)
         self.list = []
 
     def create_add(self):
-        if not reverseCheat and not slowCheat:
-            self.counter += 1
-        if self.counter == self.addRate:
-            self.counter = 0
-            self.Size = random.randint(self.minSize, self.maxSize)
-            newObject = {'rect': pygame.Rect(windowWidth, random.randint(0, windowHeight - self.Size), self.Size, self.Size),
-                        'speed': random.randint(self.MinSpeed, self.MaxSpeed),
-                        'surface':pygame.transform.scale(self.image, (self.Size, self.Size)),}
+            newObject = {'rect': pygame.Rect(self.center[0],
+                                             self.center[1],
+                                             self.size, self.size),
+                        'surface':pygame.transform.scale(self.image, (self.size, self.size)),
+                         'theta': self.theta,}
             
             self.list.append(newObject)
 
 
     def drawList(self):
+        #print("Color=",self.color,"center=",self.center,"radius=",self.radius)
+        pygame.draw.circle(windowSurface, self.color, self.center, self.radius, 4);
         for o in self.list[:]:
             windowSurface.blit(o['surface'], o['rect'])
 
     def moveList(self):
         for o in self.list[:]:
-            if not reverseCheat and not slowCheat:
-                o['rect'].move_ip(-o['speed'], 0)
-            elif reverseCheat:
-                o['rect'].move_ip(5, 0)
-            elif slowCheat:
-                o['rect'].move_ip(-1, 0)
-        
+            radians = math.radians(o['theta'])
+            x = self.radius * math.cos(radians)
+            y = self.radius * math.sin(radians)
+            #print('x=', x, 'y=', y)
+            theta = self.revsPerSec * 360 / FPS
+            o['rect'].x = x + self.center[0] - self.size/2
+            o['rect'].y = y + self.center[1] - self.size/2
+            theta += o['theta']
+            if (theta >= 360):
+                theta -= 360
+            o['theta'] = theta
 
     def cullList(self):
         for o in self.list[:]:
@@ -81,6 +85,13 @@ class constantSize(variableSize):
 def terminate():
     pygame.quit()
     sys.exit()
+
+def freeze():
+    print("noScreenUpdate=", noScreenUpdate)
+    if noScreenUpdate == 1:
+        noScreenUpdate = 0
+    else:
+        noScreenUpdate = 1
 
 def waitForPlayerToPressKey():
     while True:
@@ -118,15 +129,7 @@ gotHitByBigShroom = pygame.mixer.Sound('blip.wav')
 gotHitBySmallShroom = pygame.mixer.Sound('blurp.wav')
 
 # Set up images
-player = pygame.Rect(300, 100, 35, 35)
-playerImage = pygame.image.load('player-1.png')
-playerStrechedImage = pygame.transform.scale(playerImage, (35, 35))
-playerRect = playerStrechedImage.get_rect()
 asteroidImage = pygame.image.load('asteroid.png')
-tonicImage = pygame.image.load('Energy_Tank.png')
-megaTankImage = pygame.image.load('mega_tank.png')
-BigShroomImage = pygame.image.load('BigShroom.png')
-SmallShroomImage = pygame.image.load('SmallShroom.png')
 backgroundImage = pygame.image.load('8-bit_Space.jpg')
 strechedBackgroundImage = pygame.transform.scale(backgroundImage, (windowWidth, windowHeight))
 
@@ -140,31 +143,22 @@ pygame.display.update()
 waitForPlayerToPressKey()
 
 topScore = 0
-tank = constantSize(25, 8, 10, 500, megaTankImage)
-tonic = constantSize(30, 4, 5, 25, tonicImage)
-asteroid = variableSize(20, 40 , 2, 8, 8, asteroidImage)
-bigShroom = constantSize(25, 3, 5, 60, BigShroomImage)
-smallShroom = constantSize(25, 4, 5, 60, SmallShroomImage)
+asteroid = variableSize(40, windowWidth/2, windowHeight/2, 100, 0.25, asteroidImage)
 while True:
     # Set up the start of the game.
     asteroids = []
-    tonics = []
-    tanks = []
-    bigShrooms = []
-    smallShrooms = []
     score = 0
     life = 1
-    playerRect.topleft = (windowWidth / 2, windowHeight/ 2)
     moveLeft = moveRight = moveUp = moveDown = False
     reverseCheat = slowCheat = False
-    tonicAddCounter = 0
-    asteroidAddCounter = 0
-    tankAddCounter = 0
-    bigShroomAddCounter = 0
-    smallShroomAddCounter = 0
     pygame.mixer.music.play(-1, 0.0)
+    # Add new asteroids at the right of the screen
+    asteroid.create_add()
 
     while True: # The game loop runs while the game part is playing.
+        if noScreenUpdate == 1:
+            continue
+
         score += 1 # Increase score.
 
         for event in pygame.event.get():
@@ -198,6 +192,8 @@ while True:
                     score = 0
                 if event.key == K_ESCAPE:
                     terminate()
+                if event.key == K_SPACE:
+                    freeze()
 
                 if event.key == K_LEFT or event.key == K_a:
                     moveLeft = False
@@ -208,140 +204,17 @@ while True:
                 if event.key == K_DOWN or event.key == K_s:
                     moveDown = False
 
-        # Add new asteroids at the right of the screen
-        asteroid.create_add()
-        
-        # Add new tonics at the right of the screen
-        tonic.create_add()
-
-        # Add new mega tanks at the right of the screen
-        tank.create_add()
-
-        # Add new Bigshrooms at the right of the screen
-        bigShroom.create_add()
-
-        # Add new SmallShrooms at the right of the screen
-        smallShroom.create_add()
-            
-        # Move the player around.
-        if moveLeft and playerRect.left > 0:
-            playerRect.move_ip(-1 * playerMoveRate, 0)
-        if moveRight and playerRect.right < windowWidth:
-            playerRect.move_ip(playerMoveRate, 0)
-        if moveUp and playerRect.top > 0:
-            playerRect.move_ip(0, -1 * playerMoveRate)
-        if moveDown and playerRect.bottom < windowHeight:
-            playerRect.move_ip(0, playerMoveRate)
-
         # Move the asteroids left
         asteroid.moveList()
-        
-        # Move the tonics left
-        tonic.moveList()
-
-        # Move the tanks left
-        tank.moveList()
-        
-        # Move the Bigshrooms left
-        bigShroom.moveList()
-
-        # Move Smallshrooms left
-        smallShroom.moveList()
-      
-        # Delete asteroids that have fallen past the left of the screen.
-        asteroid.cullList()
-        
-        # Delete tonics that have fallen past the left of the screen
-        tonic.cullList()
-
-        # Delete tanks that have fallen past the left of the screen
-        tank.cullList()
-
-        # Delete BigShrooms that have fallen past the left of the screen
-        bigShroom.cullList()
-
-        # Delete Smallshrooms that have fallen past the left of the screen
-        smallShroom.cullList()
         
         # Draw the game world on the window.
         windowSurface.blit(strechedBackgroundImage, (0, 0))
 
-        # Draw the score and top score.
-        drawText('Score: %s' % (score), font, windowSurface, 10, 0)
-        drawText('Top Score: %s' % (topScore), font, windowSurface,
-               10, 40)
-        drawText('Life: %s' % (life), font, windowSurface, 10, 80)
-
-        # Draw the player's rectangle.
-        windowSurface.blit(playerStrechedImage, playerRect)
-
         # Draw each asteroid.
         asteroid.drawList()
         
-        # Draw each tonic
-        tonic.drawList()
-        
-        # Draw each mega tank
-        tank.drawList()
-            
-        # Draw each Bigshroom
-        bigShroom.drawList()
-        
-        # Draw each SmallShroom
-        smallShroom.drawList()
-
         pygame.display.update()
 
-        # Check if any of the tonics have hit the player
-        if tonic.playerHit(playerRect):
-            gotHitByTonicSound.play()
-            score += 50
-            if life < MaxLife:
-                life += 1
-                
-        # Check if any of the asteroids have hit the player.
-        if asteroid.playerHit(playerRect):
-            score -= 10
-            life -= 1
-            gotHitByAsteroid.play()
-            if life <= 0:
-                tonic.list.clear()
-                tank.list.clear()
-                asteroid.list.clear()
-                bigShroom.list.clear()
-                smallShroom.list.clear()
-                if score > topScore:
-                    topScore = score # Set new top score.
-                break
-
-        # Check if player has hit a mega tank
-        if tank.playerHit(playerRect):
-            gotHitByMT.play()
-            playerMoveRate = 5
-            player.height = 35
-            player.width = 35
-            playerStrechedImage = pygame.transform.scale(playerImage, (player.height, player.width))
-            score += 1000
-            life += 3
-            if life > SuperMaxLife:
-                life = SuperMaxLife
-
-        # Check if player has hit Bigshroom
-        if bigShroom.playerHit(playerRect):
-            gotHitByBigShroom.play()
-            score += 20
-            playerMoveRate -= 1
-            player = pygame.Rect(player.left, player.top, player.width + 2, player.height + 2)
-            playerStrechedImage = pygame.transform.scale(playerImage, (player.height, player.width))
-
-        # Check if player has hit Smallshroom
-        if smallShroom.playerHit(playerRect):
-            gotHitBySmallShroom.play()
-            score += 20
-            playerMoveRate += 1
-            player = pygame.Rect(player.left, player.top, player.width - 2, player.height - 2)
-            playerStrechedImage = pygame.transform.scale(playerImage, (player.height, player.width))
-            
         mainClock.tick(FPS)
         
 

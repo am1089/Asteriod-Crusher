@@ -1,53 +1,81 @@
-import pygame, random, sys
+import pygame, random, sys, math
 from pygame.locals import *
 
 windowWidth = 700
 windowHeight = 600
 textColor = (0, 0, 255)
 backgroundColor = (0, 0, 0)
-FPS = 40
 playerMoveRate = 5
-MaxLife = 6
-SuperMaxLife = 9
+FPS = 40
+maxLife = 6
 
-class constantSize(object):
-    def __init__(self, Size, MinSpeed, MaxSpeed, addRate, image):
-        self.Size = Size
-        self.MinSpeed = MinSpeed
-        self.MaxSpeed = MaxSpeed
+class variableSize(object):
+    def __init__(self, minSize, maxSize, revsPerSec, addRate, image):
+        self.minSize = minSize
+        self.maxSize = maxSize
+        self.revsPerSec = revsPerSec
         self.addRate = addRate
         self.image = image
         self.counter = 0
+        self.color = (255,0,0)
         self.list = []
+        self.collidedList = []  # store collided objects in the collidedList to not confuse the code
 
     def create_add(self):
-        if not reverseCheat and not slowCheat:
-            self.counter += 1
+        self.counter += 1
         if self.counter == self.addRate:
             self.counter = 0
-            newObject = {'rect': pygame.Rect(windowWidth, random.randint(0, windowHeight - self.Size), self.Size, self.Size),
-                        'speed': random.randint(self.MinSpeed, self.MaxSpeed),
-                        'surface':pygame.transform.scale(self.image, (self.Size, self.Size)),}
+            self.Size = random.randint(self.minSize, self.maxSize)
+            self.theta = random.randint(50, 75)
+            self.minAngle = random.choice([0, 360])
+            if self.minAngle == 360:
+                self.maxAngle = 0
+            else:
+                self.maxAngle = 360
+            center_x = windowWidth
+            center_y = random.randint(0, windowHeight - self.Size)
+            radius = random.randint(75, 100)
+            newObject = {'rect': pygame.Rect(center_x,
+                                             center_y,
+                                             self.Size, self.Size),
+                        'surface':pygame.transform.scale(self.image, (self.Size, self.Size)),
+                         'theta': self.theta,
+                         'center_x': center_x,
+                         'center_y': center_y,
+                         'radius': radius,
+                         'minAngle': self.minAngle,
+                         'maxAngle': self.maxAngle
+            }
             
             self.list.append(newObject)
 
+
     def drawList(self):
-        for o in self.list:
+        for o in self.list[:]:
             windowSurface.blit(o['surface'], o['rect'])
 
     def moveList(self):
         for o in self.list[:]:
-            if not reverseCheat and not slowCheat:
-                o['rect'].move_ip(-o['speed'], 0)
-            elif reverseCheat:
-                o['rect'].move_ip(5, 0)
-            elif slowCheat:
-                o['rect'].move_ip(-1, 0)
-        
-
+            radians = math.radians(o['theta'])
+            x = o['radius'] * math.cos(radians)
+            y = o['radius'] * math.sin(radians)
+            theta = self.revsPerSec * (o['maxAngle'] - o['minAngle']) / FPS
+            o['rect'].x = x + o['center_x'] - self.Size/2
+            o['rect'].y = y + o['center_y'] - self.Size/2
+            theta += o['theta']
+            if (theta >= 360):
+                theta -= 360
+            if (theta <= 0):
+                theta += 360
+            o['theta'] = theta
+            o['center_x'] -= 3
+            
     def cullList(self):
+        for o in self.collidedList[:]: 
+            self.list.remove(o)
+            self.collidedList.remove(o)
         for o in self.list[:]:
-            if o['rect'].left < 0:
+            if o['center_x'] + self.Size < 0:
                 self.list.remove(o)
 
     def playerHit(self, playerRect):
@@ -57,18 +85,58 @@ class constantSize(object):
                 return True
         return False
 
-class variableSize(object):
-    def __init__(self, MinSize, MaxSize, MinSpeed, MaxSpeed, addRate):
-        self.MinSize = MinSize
-        self.MaxSize = MaxSize
-        self.MinSpeed = MinSpeed
-        self.MaxSpeed = MaxSpeed
-        self.addRate = addRate
+    def collision(self):
+        for i, o1 in enumerate(self.list):  # makes a tuple list to compare object values using the index
+            for o2 in self.list[i+1:]:
+                if o1['rect'].colliderect(o2['rect']):
+                    collision.play()
+                    self.collidedList.append(o1)
+                    self.collidedList.append(o2)
 
+class constantSize(variableSize):
+    def __init__(self, Size, revsPerSec, addRate, image):
+        super().__init__(Size, Size, revsPerSec, addRate, image)
+        self.Size = Size
+
+    def create_add(self):
+        self.counter += 1
+        if self.counter == self.addRate:
+            self.counter = 0
+            self.theta = random.randint(50, 75)
+            self.minAngle = random.choice([0, 360])
+            if self.minAngle == 360:
+                self.maxAngle = 0
+            else:
+                self.maxAngle = 360
+            center_x = windowWidth
+            center_y = random.randint(0, windowHeight - self.Size)
+            radius = random.randint(75, 100)
+            newObject = {'rect': pygame.Rect(center_x,
+                                             center_y,
+                                             self.Size, self.Size),
+                        'surface':pygame.transform.scale(self.image, (self.Size, self.Size)),
+                         'theta': self.theta,
+                         'center_x': center_x,
+                         'center_y': center_y,
+                         'radius': radius,
+                         'minAngle': self.minAngle,
+                         'maxAngle': self.maxAngle
+            }
+            
+            self.list.append(newObject)
+            
 def terminate():
     pygame.quit()
     sys.exit()
 
+def flipRotation(o):
+    if o['minAngle'] == 360:
+        o['minAngle'] = 0
+        o['maxAngle'] = 360
+    else:
+        o['minAngle'] = 360
+        o['maxAngle'] = 0
+    
 def waitForPlayerToPressKey():
     while True:
         for event in pygame.event.get():
@@ -79,13 +147,6 @@ def waitForPlayerToPressKey():
                     terminate()
                 return
 
-def playerHasHitAsteroid(playerRect, asteroids):
-    for a in asteroids:
-        if playerRect.colliderect(a['rect']):
-            asteroids.remove(a)
-            return True
-    return False
-
 def drawText(text, font, surface, x, y):
     textobj = font.render(text, 1, textColor)
     textrect = textobj.get_rect()
@@ -93,34 +154,28 @@ def drawText(text, font, surface, x, y):
     surface.blit(textobj, textrect)
 
 
-# Set up pygame and the window
+# Set up pygame, the window, and the clock
 pygame.init()
 mainClock = pygame.time.Clock()
 windowSurface = pygame.display.set_mode((windowWidth, windowHeight))
-pygame.display.set_caption('Asteroid')
+pygame.display.set_caption('Asteroid-Circle')
 
 # Set up the fonts.
 font = pygame.font.SysFont(None, 48)
 
 # Set up sounds.
-gameOverSound = pygame.mixer.Sound('gameover.wav')
 pygame.mixer.music.load('background.mid')
-gotHitByTonicSound = pygame.mixer.Sound('smw_1-up.wav')
+gameOverSound = pygame.mixer.Sound('gameover.wav')
 gotHitByAsteroid = pygame.mixer.Sound('0477.wav')
-gotHitByMT = pygame.mixer.Sound('cheering.wav')
-gotHitByBigShroom = pygame.mixer.Sound('blip.wav')
-gotHitBySmallShroom = pygame.mixer.Sound('blurp.wav')
+gotHitByTonic = pygame.mixer.Sound('smw_1-up.wav')
+collision = pygame.mixer.Sound('explosion.wav')
 
 # Set up images
-player = pygame.Rect(300, 100, 35, 35)
 playerImage = pygame.image.load('player-1.png')
-playerStrechedImage = pygame.transform.scale(playerImage, (35, 35))
-playerRect = playerStrechedImage.get_rect()
+strechedPlayerImage = pygame.transform.scale(playerImage, (40, 40))
+playerRect = strechedPlayerImage.get_rect()
 asteroidImage = pygame.image.load('asteroid.png')
 tonicImage = pygame.image.load('Energy_Tank.png')
-megaTankImage = pygame.image.load('mega_tank.png')
-BigShroomImage = pygame.image.load('BigShroom.png')
-SmallShroomImage = pygame.image.load('SmallShroom.png')
 backgroundImage = pygame.image.load('8-bit_Space.jpg')
 strechedBackgroundImage = pygame.transform.scale(backgroundImage, (windowWidth, windowHeight))
 
@@ -133,43 +188,22 @@ drawText('Press a key to start.', font, windowSurface,
 pygame.display.update()
 waitForPlayerToPressKey()
 
-topScore = 0
-tank = constantSize(25, 8, 10, 500, megaTankImage)
-tonic = constantSize(30, 4, 5, 25, tonicImage)
-asteroid = inconstantSize(20, 40 , 2, 8, 8)
-bigShroom = constantSize(25, 3, 5, 60, BigShroomImage)
-smallShroom = constantSize(25, 4, 5, 60, SmallShroomImage)
+asteroids = variableSize(30, 40, 0.25, 40, asteroidImage)
+tonics = constantSize(35, 0.25, 50, tonicImage)
 while True:
     # Set up the start of the game.
-    asteroids = []
-    tonics = []
-    MTanks = []
-    BigShrooms = []
-    SmallShrooms = []
-    score = 0
     life = 1
-    playerRect.topleft = (windowWidth / 2, windowHeight - 50)
+    playerRect.topleft = (windowWidth / 2, windowHeight / 2)
     moveLeft = moveRight = moveUp = moveDown = False
-    reverseCheat = slowCheat = False
-    tonicAddCounter = 0
-    asteroidAddCounter = 0
-    tankAddCounter = 0
-    bigShroomAddCounter = 0
-    smallShroomAddCounter = 0
     pygame.mixer.music.play(-1, 0.0)
 
     while True: # The game loop runs while the game part is playing.
-        score += 1 # Increase score.
 
         for event in pygame.event.get():
             if event.type == QUIT:
                 terminate()
 
             if event.type == KEYDOWN:
-                if event.key == K_z:
-                    reverseCheat = True
-                if event.key == K_x:
-                    slowCheat = True
                 if event.key == K_LEFT or event.key == K_a:
                     moveRight = False
                     moveLeft = True
@@ -184,12 +218,6 @@ while True:
                     moveDown = True
 
             if event.type == KEYUP:
-                if event.key == K_z:
-                    reverseCheat = False
-                    score = 0
-                if event.key == K_x:
-                    slowCheat = False
-                    score = 0
                 if event.key == K_ESCAPE:
                     terminate()
 
@@ -202,30 +230,10 @@ while True:
                 if event.key == K_DOWN or event.key == K_s:
                     moveDown = False
 
-        # Add new asteroids at the right of the screen
-        if not reverseCheat and not slowCheat:
-            asteroidAddCounter += 1
-        if asteroidAddCounter == asteroid.addRate:
-            asteroidAddCounter = 0
-            asteroidSize = random.randint(asteroid.MinSize, asteroid.MaxSize)
-            newAsteroid = {'rect': pygame.Rect(windowWidth, random.randint(0, windowHeight - asteroidSize), asteroidSize, asteroidSize),
-                         'speed': random.randint(asteroid.MinSpeed, asteroid.MaxSpeed),
-                         'surface':pygame.transform.scale(asteroidImage, (asteroidSize, asteroidSize)),}
+        # Add new objects to right of screen
+        asteroids.create_add()
+        tonics.create_add()
 
-            asteroids.append(newAsteroid)
-        
-        # Add new tonics at the right of the screen
-        tonic.create_add()
-
-        # Add new mega tanks at the right of the screen
-        tank.create_add()
-
-        # Add new Bigshrooms at the right of the screen
-        bigShroom.create_add()
-
-        # Add new SmallShrooms at the right of the screen
-        smallShroom.create_add()
-            
         # Move the player around.
         if moveLeft and playerRect.left > 0:
             playerRect.move_ip(-1 * playerMoveRate, 0)
@@ -236,126 +244,53 @@ while True:
         if moveDown and playerRect.bottom < windowHeight:
             playerRect.move_ip(0, playerMoveRate)
 
-        # Move the asteroids left
-        for a in asteroids:
-            if not reverseCheat and not slowCheat:
-                a['rect'].move_ip(-a['speed'], 0)
-            elif reverseCheat:
-                a['rect'].move_ip(5, 0)
-            elif slowCheat:
-                a['rect'].move_ip(-1, 0)
-                
-        # Move the tonics left
-        tonic.moveList()
-
-        # Move the tanks left
-        tank.moveList()
+        # Move the objects left
+        asteroids.moveList()
+        tonics.moveList()
         
-        # Move the Bigshrooms left
-        bigShroom.moveList()
+        # Check if objects collided with each other
+        asteroids.collision()
+        tonics.collision()
 
-        # Move Smallshrooms left
-        smallShroom.moveList()
-      
-        # Delete asteroids that have fallen past the left of the screen.
-        for a in asteroids[:]:
-            if a['rect'].left < 0:
-                asteroids.remove(a)
-        
-        # Delete tonics that have fallen past the left of the screen
-        tonic.cullList()
-
-        # Delete tanks that have fallen past the left of the screen
-        tank.cullList()
-
-        # Delete BigShrooms that have fallen past the left of the screen
-        bigShroom.cullList()
-
-        # Delete Smallshrooms that have fallen past the left of the screen
-        smallShroom.cullList()
-        
         # Draw the game world on the window.
         windowSurface.blit(strechedBackgroundImage, (0, 0))
 
-        # Draw the score and top score.
-        drawText('Score: %s' % (score), font, windowSurface, 10, 0)
-        drawText('Top Score: %s' % (topScore), font, windowSurface,
-               10, 40)
-        drawText('Life: %s' % (life), font, windowSurface, 10, 80)
+        # Display for player life
+        drawText('Life: %s' % (life), font, windowSurface, 10, 20)
 
         # Draw the player's rectangle.
-        windowSurface.blit(playerStrechedImage, playerRect)
+        windowSurface.blit(strechedPlayerImage, playerRect)
 
-        # Draw each asteroid.
-        for a in asteroids:
-            windowSurface.blit(a['surface'], a['rect'])
-
-        # Draw each tonic
-        tonic.drawList()
+        # Draw each object
+        asteroids.drawList()
+        tonics.drawList()
         
-        # Draw each mega tank
-        tank.drawList()
-            
-        # Draw each Bigshroom
-        bigShroom.drawList()
+        #Delete each object
+        asteroids.cullList()
+        tonics.cullList()
         
-        # Draw each SmallShroom
-        smallShroom.drawList()
-
         pygame.display.update()
 
-        # Check if any of the tonics have hit the player
-        if tonic.playerHit(playerRect):
-            gotHitByTonicSound.play()
-            score += 50
-            if life < MaxLife:
-                life += 1
-                
         # Check if any of the asteroids have hit the player.
-        if playerHasHitAsteroid(playerRect, asteroids):
-            score -= 10
-            life -= 1
+        if asteroids.playerHit(playerRect):
             gotHitByAsteroid.play()
+            life -= 1
             if life <= 0:
-                if score > topScore:
-                    topScore = score # Set new top score.
-                break
+                tonics.list.clear()
+                asteroids.list.clear()
+                break  # Game loop ends here
 
-        # Check if player has hit a mega tank
-        if tank.playerHit(playerRect):
-            gotHitByMT.play()
-            playerMoveRate = 5
-            player.height = 35
-            player.width = 35
-            playerStrechedImage = pygame.transform.scale(playerImage, (player.height, player.width))
-            score += 1000
-            life += 3
-            if life > SuperMaxLife:
-                life = SuperMaxLife
-
-        # Check if player has hit Bigshroom
-        if bigShroom.playerHit(playerRect):
-            gotHitByBigShroom.play()
-            score += 20
-            playerMoveRate -= 1
-            player = pygame.Rect(player.left, player.top, player.width + 2, player.height + 2)
-            playerStrechedImage = pygame.transform.scale(playerImage, (player.height, player.width))
-
-        # Check if player has hit Smallshroom
-        if smallShroom.playerHit(playerRect):
-            gotHitBySmallShroom.play()
-            score += 20
-            playerMoveRate += 1
-            player = pygame.Rect(player.left, player.top, player.width - 2, player.height - 2)
-            playerStrechedImage = pygame.transform.scale(playerImage, (player.height, player.width))
-            
+        # Check if the player has hit a tonic
+        if tonics.playerHit(playerRect):
+            gotHitByTonic.play()
+            life += 1
+        
         mainClock.tick(FPS)
         
 
     # Stop the game and show the "Game Over" screen.
     pygame.mixer.music.stop()
     gameOverSound.play()
-
     drawText('GAME OVER', font, windowSurface, (windowWidth / 3),
            (windowHeight / 3))
     drawText('Press a key to play again.', font, windowSurface,

@@ -19,32 +19,16 @@ class variableSize(object):
         self.counter = 0
         self.color = (255,0,0)
         self.list = []
-        self.collidedList = []  # store collided objects in the collidedList to not confuse the code
 
     def create_add(self):
         self.counter += 1
         if self.counter == self.addRate:
             self.counter = 0
             self.Size = random.randint(self.minSize, self.maxSize)
-            self.theta = random.randint(50, 75)
-            self.minAngle = random.choice([0, 360])
-            if self.minAngle == 360:
-                self.maxAngle = 0
-            else:
-                self.maxAngle = 360
-            center_x = windowWidth
-            center_y = random.randint(0, windowHeight - self.Size)
-            radius = random.randint(75, 100)
             newObject = {'rect': pygame.Rect(center_x,
                                              center_y,
                                              self.Size, self.Size),
                         'surface':pygame.transform.scale(self.image, (self.Size, self.Size)),
-                         'theta': self.theta,
-                         'center_x': center_x,
-                         'center_y': center_y,
-                         'radius': radius,
-                         'minAngle': self.minAngle,
-                         'maxAngle': self.maxAngle
             }
             
             self.list.append(newObject)
@@ -85,13 +69,7 @@ class variableSize(object):
                 return True
         return False
 
-    def collision(self):
-        for i, o1 in enumerate(self.list):  # makes a tuple list to compare object values using the index
-            for o2 in self.list[i+1:]:
-                if o1['rect'].colliderect(o2['rect']):
-                    collision.play()
-                    self.collidedList.append(o1)
-                    self.collidedList.append(o2)
+
 
 class constantSize(variableSize):
     def __init__(self, Size, revsPerSec, addRate, image):
@@ -102,25 +80,10 @@ class constantSize(variableSize):
         self.counter += 1
         if self.counter == self.addRate:
             self.counter = 0
-            self.theta = random.randint(50, 75)
-            self.minAngle = random.choice([0, 360])
-            if self.minAngle == 360:
-                self.maxAngle = 0
-            else:
-                self.maxAngle = 360
-            center_x = windowWidth
-            center_y = random.randint(0, windowHeight - self.Size)
-            radius = random.randint(75, 100)
             newObject = {'rect': pygame.Rect(center_x,
                                              center_y,
                                              self.Size, self.Size),
                         'surface':pygame.transform.scale(self.image, (self.Size, self.Size)),
-                         'theta': self.theta,
-                         'center_x': center_x,
-                         'center_y': center_y,
-                         'radius': radius,
-                         'minAngle': self.minAngle,
-                         'maxAngle': self.maxAngle
             }
             
             self.list.append(newObject)
@@ -128,14 +91,6 @@ class constantSize(variableSize):
 def terminate():
     pygame.quit()
     sys.exit()
-
-def flipRotation(o):
-    if o['minAngle'] == 360:
-        o['minAngle'] = 0
-        o['maxAngle'] = 360
-    else:
-        o['minAngle'] = 360
-        o['maxAngle'] = 0
     
 def waitForPlayerToPressKey():
     while True:
